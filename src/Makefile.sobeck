@@ -1,9 +1,9 @@
 #     makefile for MOOGSILENT with all of the common block assignments;
-#     this is for a Redhat linux machine
+#     this is for a mac machine
 
 #     here are the object files
 OBJECTS = Abfind.o Abpop.o Abunplot.o Batom.o Begin.o Binary.o \
-        Binplot.o Binplotprep.o Blends.o Bmolec.o Boxit.o \
+	Binplot.o Binplotprep.o Blankstring.o Blends.o Bmolec.o Boxit.o \
         Calmod.o Cdcalc.o Chabund.o Cog.o Cogplot.o Cogsyn.o \
         Correl.o Crosscorr.o Curve.o Damping.o Defcolor.o Discov.o \
         Doflux.o Drawcurs.o Eqlib.o Estim.o Ewfind.o \
@@ -23,18 +23,20 @@ OBJECTS = Abfind.o Abpop.o Abunplot.o Batom.o Begin.o Binary.o \
 	Sourcefunc_scat_cont.o AngWeight.o \
 	Sourcefunc_scat_line.o Cdcalc_JS.o
 
-
 #     here are the common files
 COMMON =  Atmos.com Dummy.com Equivs.com Factor.com Kappa.com Linex.com \
-        Mol.com Multistar.com Obspars.com Plotval.com Pstuff.com \
-        Quants.com Multimod.com Dampdat.com Source.com
+	Mol.com Multistar.com Obspars.com Plotval.com Pstuff.com \
+	Quants.com Multimod.com Dampdat.com Source.com
 
 CC = cc
-FC = f77 -Wall
+#FC = g77 -w
+FC = gfortran -Wall -m64 -ff2c
 
 # the following lines point to some needed libraries
 X11LIB = /usr/X11R6/lib
-SMLIB = /opt/local/lib
+#SMLIB = /usr/local/scisoft/packages/sm/lib
+SMLIB = /usr/local/lib
+AQLIB = /usr/local/scisoft/lib
 
 #        here are the compilation and linking commands
 all: MOOGSILENT ;
@@ -52,7 +54,7 @@ all: MOOGSILENT ;
 
 MOOGSILENT:  $(OBJECTS);
 	$(FC) $(OBJECTS) -o MOOGSILENT -L$(X11LIB) -lX11 \
-        -L$(SMLIB) -lplotsub -ldevices -lutils
+	-L$(SMLIB) -lplotsub -ldevices -lutils -L$(AQLIB) -laquaterm
 
 $(OBJECTS): $(COMMON)
 

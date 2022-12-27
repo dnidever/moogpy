@@ -1,4 +1,3 @@
-#$CONFIGURATION
 #     makefile for MOOGSILENT with all of the common block assignments;
 #     this is for a 64-bit linux machine
 
@@ -19,22 +18,38 @@ OBJECTS = Abfind.o Abpop.o Abunplot.o Batom.o Begin.o Binary.o \
 	Partnew.o Plotit.o Plotremember.o Pltabun.o Pltcog.o \
 	Pltflux.o Pltspec.o Pointcurs.o Prinfo.o Putasci.o Readobs.o \
 	Rinteg.o Smooth.o Specplot.o Stats.o Sunder.o Synpop.o Synspec.o \
-	Synth.o Taukap.o Total.o Trudamp.o Ucalc.o Vargauss.o \
-	Vmacro.o Voigt.o Wavecalc.o Weedout.o Writenumber.o
+	Synth.o Tablepop.o Taukap.o Total.o Trudamp.o Ucalc.o Vargauss.o \
+	Vmacro.o Voigt.o Wavecalc.o Weedout.o Writenumber.o \
+	Sourcefunc_scat_cont.o AngWeight.o \
+	Sourcefunc_scat_line.o Cdcalc_JS.o
+
 
 
 #     here are the common files
 COMMON =  Atmos.com Dummy.com Equivs.com Factor.com Kappa.com Linex.com \
         Mol.com Multistar.com Obspars.com Plotval.com Pstuff.com \
-        Quants.com Multimod.com Dampdat.com
+        Quants.com Multimod.com Dampdat.com Source.com
 
 CC = cc
+FC = f77 -Wall
 
 # the following lines point to some needed libraries
 X11LIB = /usr/X11R6/lib64
+SMLIB = /opt/local/sm_2.4.27-x86_64/lib
 
 #        here are the compilation and linking commands
 all: MOOGSILENT ;
+	@echo -----------------------------------------------------------------
+	@echo 
+	@echo make sure that you have entered the proper parameters
+	@echo for MOOGSILENT into the FORTRAN source driver 
+	@echo routine Moogsilent.f !!!!!!!!!!!!
+	@echo
+	@echo NOTE: the isotop driver has been eliminated;
+	@echo your synthesis needs for elemental and isotopic
+	@echo abundances now can be handled with the synth driver
+	@echo
+	@echo -----------------------------------------------------------------
 
 MOOGSILENT:  $(OBJECTS);
 	$(FC) $(OBJECTS) -o MOOGSILENT -L$(X11LIB) -lX11 \

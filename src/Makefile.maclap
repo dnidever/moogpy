@@ -1,5 +1,5 @@
 #     makefile for MOOG with all of the common block assignments;
-#     this is for a  64-bit linux machine
+#     this is for my Mac laptop
 
 #     here are the object files
 OBJECTS = Abfind.o Abpop.o Abunplot.o Batom.o Begin.o Binary.o \
@@ -27,16 +27,16 @@ OBJECTS = Abfind.o Abpop.o Abunplot.o Batom.o Begin.o Binary.o \
 
 #     here are the common files
 COMMON =  Atmos.com Dummy.com Equivs.com Factor.com Kappa.com Linex.com \
-        Mol.com Multistar.com Obspars.com Plotval.com Pstuff.com \
-        Quants.com Multimod.com Dampdat.com Source.com
+	Mol.com Multistar.com Obspars.com Plotval.com Pstuff.com \
+	Quants.com Multimod.com Dampdat.com Source.com
 
 CC = cc
-#FC = f77 -Wall
-FC = gfortran -fno-range-check -w -fallow-argument-mismatch -ff2c
+FC = g77 -w
 
 # the following lines point to some needed libraries
-X11LIB = /etc
-SMLIB = /usr/local/lib
+X11LIB = /usr/X11R6/lib
+SMLIB = /usr/local/scisoft/packages/sm/lib
+AQLIB = /usr/local/scisoft/lib
 
 #        here are the compilation and linking commands
 all: MOOG ;
@@ -54,7 +54,7 @@ all: MOOG ;
 
 MOOG:  $(OBJECTS);
 	$(FC) $(OBJECTS) -o MOOG -L$(X11LIB) -lX11 \
-        -L$(SMLIB) -lplotsub -ldevices -lutils
+	-L$(SMLIB) -lplotsub -ldevices -lutils -L$(AQLIB) -laquaterm
 
 $(OBJECTS): $(COMMON)
 
