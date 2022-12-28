@@ -200,7 +200,7 @@ def compilemoog():
 
 # We need to build MOOG and MOOGSILENT before they get moved to the scripts/
 # directory so that they can be moved into the $PATH
-if 'install' in sys.argv:
+if 'install' in sys.argv or 'develop' in sys.argv:
     compilemoog()
 
 setup(name='moogpy',
