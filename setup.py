@@ -211,9 +211,9 @@ setup(name='moogpy',
       #scripts=['bin/MOOG','bin/MOOGSILENT'],
       requires=['numpy','astropy(>=4.0)','scipy','matplotlib','dlnpyutils'],
       #cmdclass={'install': CustomInstall},
-      zip_safe = False,
+      #zip_safe = False,
       #include_package_data=True,
-      packages=find_packages(exclude=["tests"]),
+      packages=find_packages(where="python"),
       #packages=find_namespace_packages(where="python"),
       package_dir={"": "python"}   
 )
