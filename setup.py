@@ -50,10 +50,16 @@ def get_bin_path():
 
     return bindir
 
+
+
 # We need to build MOOG and MOOGSILENT before they get moved to the scripts/
 # directory so that they can be moved into the $PATH
 if 'install' in sys.argv:
+    compilemoog()
 
+def compilemoog():
+    """ Compile the MOOG Fortran code."""
+    
     # Identify the platform
     platform = current_platform()
 
@@ -191,17 +197,11 @@ if 'install' in sys.argv:
     #    else:
     #        sys.stdout.write("AquaTerm framework copied to /Library/Frameworks/AquaTerm.framework\n")
 
-## Distutils setup information
-#setup(
-#    name='moogpy',
-#    version=__version__,
-#    author='David Nidever',
-#    author_email='dnidever@montana.edu',
-#    maintainer='David Nidever',
-#    maintainer_email='dnidever@montana.edu',
-#    download_url='http://github.com/dnidever/moogpy',
-#    description='Spectrum synthesis and LTE line analysis.',
-#)
+
+# We need to build MOOG and MOOGSILENT before they get moved to the scripts/
+# directory so that they can be moved into the $PATH
+if 'install' in sys.argv:
+    compilemoog()
 
 setup(name='moogpy',
       version='1.0.1',
