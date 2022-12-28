@@ -10,11 +10,12 @@ MOOGPy
 Introduction
 ============
 |moogpy| is a generical stellar spectral synthesis package that can be run from python.  It's essentially
-a redistribution of the `MOOG <https://github.com/jsobeck/MOOG-SCAT_basic_git>`_
-Fortran spectral synthesis code by Chris Sneden with scattering updates from Jennifer Sobeck
-and a python wrapper/driver software (mostly reused from Jon Holtzman's
-code in the `APOGEE package <https://github.com/sdss/apogee>`_).  The setup.py file has also been modified to
-automatically compile the Fortran code and copy them to the user's python scripts directory.
+a redistribution of the `MOOG <https://github.com/jsobeck/MOOG-SCAT_basic_git>`_ and `moog17scat <https://github.com/alexji/moog17scat>`_
+Fortran spectral synthesis code by Chris Sneden with scattering updates from Jennifer Sobeck and other updates by Alex Ji.
+In addition, there is Python wrapper/driver software where I reused some old IDL code I wrote and some code from Jon Holtzman
+from the `APOGEE package <https://github.com/sdss/apogee>`_.  The setup.py file has also been modified to
+automatically compile the Fortran code and copy them to the user's python scripts directory.  This reused code written by
+Andy Casey in his `moog package <https://github.com/andycasey/moog>`_.
 
 .. toctree::
    :maxdepth: 1
@@ -30,7 +31,7 @@ and elemental abundances that you want to run.
 
 1) Model Atmospheres
 
-   MOOG can read both MARCS model atmospheres and Kurucz/ATLAS model atmosphers.
+   MOOG can read Kurucz/ATLAS model atmosphers.
 
 2) Linelists
 
@@ -42,6 +43,8 @@ and elemental abundances that you want to run.
    main ``synthesis.synthesize()`` function.  The individual elements abundances are given in the ``elems`` parameters
    as a list of [element name, abundance] pairs, where abundance in the in [X/M] format relative to the overall metallicity.
 
+More details on how the Fortran MOOG code works can be found in the `WRITEnov2019.pdf <_static/WRITEnov2019.pdf>`_ documentation.
+   
 
 Examples
 ========
