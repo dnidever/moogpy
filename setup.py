@@ -51,12 +51,6 @@ def get_bin_path():
     return bindir
 
 
-
-# We need to build MOOG and MOOGSILENT before they get moved to the scripts/
-# directory so that they can be moved into the $PATH
-if 'install' in sys.argv:
-    compilemoog()
-
 def compilemoog():
     """ Compile the MOOG Fortran code."""
     
