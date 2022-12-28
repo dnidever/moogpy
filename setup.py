@@ -204,7 +204,7 @@ if 'install' in sys.argv:
     compilemoog()
 
 setup(name='moogpy',
-      version='1.0.1',
+      version='1.0.2',
       description='MOOG spectral synthesis code and python wrapper',
       author='David Nidever',
       author_email='dnidever@montana.edu',
