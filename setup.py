@@ -100,8 +100,9 @@ if 'install' in sys.argv:
             fortran_vars = 'FC = g77 -w'
     else:
         sys.stderr.write("Could not find g77 or gfortran on the system!\n")
-        sys.exit()
-
+        #sys.exit()
+        return
+        
     # Get our directories relative to the current path
     repository_dir = os.path.dirname(os.path.realpath(__file__))
     
