@@ -197,10 +197,9 @@ def compilemoog():
     #    else:
     #        sys.stdout.write("AquaTerm framework copied to /Library/Frameworks/AquaTerm.framework\n")
 
-
 # We need to build MOOG and MOOGSILENT before they get moved to the scripts/
 # directory so that they can be moved into the $PATH
-if 'install' in sys.argv or 'develop' in sys.argv:
+if 'install' in sys.argv or 'develop' in sys.argv or 'bdist_wheel' in sys.argv:
     compilemoog()
 
 setup(name='moogpy',
