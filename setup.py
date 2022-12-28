@@ -213,7 +213,8 @@ setup(name='moogpy',
       #cmdclass={'install': CustomInstall},
       #zip_safe = False,
       #include_package_data=True,
-      packages=find_packages(where="python"),
+      #packages=find_packages(where="python"),
+      packages = ['moogpy'],
       #packages=find_namespace_packages(where="python"),
       package_dir={"": "python"}   
 )
