@@ -1,11 +1,13 @@
-from distutils.core import setup
-from distutils.sysconfig import get_python_lib
+#from distutils.core import setup
+#from distutils.sysconfig import get_python_lib
+
 import os
 import sys
 import fileinput
 import platform
 import subprocess
 from setuptools.command.install import install
+from setuptools import setup, find_packages
 
 from platform import system as current_platform
 from shutil import copy, move, copytree, copyfile
@@ -201,7 +203,7 @@ if 'install' in sys.argv:
 #)
 
 setup(name='moogpy',
-      version='1.0.0',
+      version='1.0.1',
       description='MOOG spectral synthesis code and python wrapper',
       author='David Nidever',
       author_email='dnidever@montana.edu',
@@ -210,7 +212,8 @@ setup(name='moogpy',
       requires=['numpy','astropy(>=4.0)','scipy','matplotlib','dlnpyutils'],
       #cmdclass={'install': CustomInstall},
       zip_safe = False,
-      include_package_data=True,
+      #include_package_data=True,
+      packages=find_packages(exclude=["tests"]),
       #packages=find_namespace_packages(where="python"),
       package_dir={"": "python"}   
 )
