@@ -268,10 +268,12 @@ def do_moog(root,atmod,linelists,mh,am,abundances,wrange,dw,save=False,
     w1 = wrange[1]
     fwhm = 0.01  # Gaussian broadening 
      
-    # Read in the linelist 
-    READLINE,linefile,linelist,count=nlinelist,comment='#' 
-    dum = strsplitter(linelist,' ',/extract) 
-    lwave = float(reform(dum[0,:])) 
+    # Read in the linelist
+    linelist = dln.readlines(linefile,comment='#')
+    nlinelist = len(linelist)
+    #READLINE,linefile,linelist,count=nlinelist,comment='#' 
+    #dum = strsplitter(linelist,' ',/extract) 
+    #lwave = float(reform(dum[0,:])) 
     wavemin = np.min(lwave) 
     wavemax = np.max(lwave) 
     
