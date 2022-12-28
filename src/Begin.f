@@ -2,7 +2,7 @@
       subroutine begin
 c***************************************************************************
 c     This routine simply starts up MOOG
-c     It is machine dependent (and so, make sure the type of machine is specified in Moog.f)
+c     THIS VERSION IS FOR LINUX REDHAT MACHINES
 c***************************************************************************
 
       implicit real*8 (a-h,o-z)
@@ -74,11 +74,11 @@ c*****open data files carried with the source code: Barklem damping
          num = num + 1
          moogpath(num:num) = '/'
       endif
-      fbarklem(1:num) = moogpath(1:num)
-      fbarklem(num+1:num+11) = 'Barklem.dat'
-      open (nfbarklem,file=fbarklem)
+c      fbarklem(1:num) = moogpath(1:num)
+c      fbarklem(num+1:num+11) = 'Barklem.dat'
+c      open (nfbarklem,file=fbarklem)
+      open (nfbarklem,file='$DATADIR/Barklem.dat')
 
- 
 c*****open data files carried with the source code: Barklem UV damping
       nfbarklemUV = 36
       num = 60
@@ -87,10 +87,10 @@ c*****open data files carried with the source code: Barklem UV damping
          num = num + 1
          moogpath(num:num) = '/'
       endif
-      fbarklemUV(1:num) = moogpath(1:num)
-      fbarklemUV(num+1:num+13) = 'BarklemUV.dat'
-      open (nfbarklemUV,file=fbarklemUV)
- 
+c      fbarklemUV(1:num) = moogpath(1:num)
+c      fbarklemUV(num+1:num+13) = 'BarklemUV.dat'
+c      open (nfbarklemUV,file=fbarklemUV)
+      open (nfbarklemUV,file='$DATADIR/BarklemUV.dat') 
 
 c  write a header and find the appropriate parameter file, and exit normally
       write (array,1001)
@@ -120,7 +120,7 @@ c*****format statements
 1001  format (79('*'))
 1002  format (a7)
 1003  format (22x,'MOOG IS CONTROLLED BY DRIVER ',a7)
-1004  format (25(' '),'MOOG SCAT VERSION (SEP 2014)',25(' '))   
+1004  format (25(' '),'MOOG LTE VERSION (FEB 2017)',26(' '))   
 1010  format (a80)
 1011  format (i3)
 
