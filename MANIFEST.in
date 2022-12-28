@@ -1,6 +1,7 @@
 include README.rst
 include setup.py
 include src/*
+include python/moogpy/test/*
 #include python/turbospectrum/data/*
 #include python/turbospectrum/test/*
 

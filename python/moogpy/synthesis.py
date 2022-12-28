@@ -180,17 +180,16 @@ def do_moog(root,atmod,linelists,mh,am,abundances,wrange,dw,save=False,
     #datadir = utils.datadir()
     #os.symlink(datadir,'./DATA')
     shutil.copy(atmod,'./'+os.path.basename(atmod))
-    
-    if verbose:
-        stdout = None
-    else:
-        stdout = open(os.devnull, 'w')
 
     # Individual element grid?
     nels = len(abundances)
 
     welem = np.array(wrange)
 
+
+    # Add 
+
+    
     # Prepare the end of the MOOG model atmosphere file 
     #NATOMS        3    0.10 
     #       6.0      7.70       8.0      8.30       7.0      7.50 
@@ -200,13 +199,12 @@ def do_moog(root,atmod,linelists,mh,am,abundances,wrange,dw,save=False,
     #     708.0     808.0      12.1   60808.0   10108.0     101.0   60606.0 
     #839.0 
     #     840.0     822.0      22.1      40.1      39.1 
-    if float(alpha) != 0.0: 
-        natoms = '6' 
-    else: 
-        natoms = '0'
 
+    # MOOG internally stores the Asplund+2009 solar abundances
+        
     # Create MOOG control file
     addon = []
+    natoms = len(abundances)
     addon.append('NATOMS        {0:s}    {1:.3f}'.format(natoms,mh))
     # ADD IN THE ALPHA ABUNDANCES 
     # For MOOG the "alpha" elements are: Mg, Si, S, Ar, Ca and Ti. 
@@ -234,22 +232,22 @@ def do_moog(root,atmod,linelists,mh,am,abundances,wrange,dw,save=False,
     # Ar(18)= 6.56 
     # Ca(20)= 6.36 
     # Ti(22)= 4.99 
-    logeps_mg = alpha + metal + 7.58 
-    logeps_si = alpha + metal + 7.55 
-    logeps_s  = alpha + metal + 7.21 
-    logeps_ar = alpha + metal + 6.56 
-    logeps_ca = alpha + metal + 6.36 
-    logeps_ti = alpha + metal + 4.99
-    addon.append('      {0:4.1f}      {1:.3f}'.format(12.0,logeps_mg))  # Mg
-    addon.append('      {0:4.1f}      {1:.3f}'.format(14.0,logeps_si))  # Si 
-    addon.append('      {0:4.1f}      {1:.3f}'.format(16.0,logeps_s))   # S 
-    addon.append('      {0:4.1f}      {1:.3f}'.format(18.0,logeps_ar))  # Ar 
-    addon.append('      {0:4.1f}      {1:.3f}'.format(20.0,logeps_ca))  # Ca 
-    addon.append('      {0:4.1f}      {1:.3f}'.format(22.0,logeps_ti))  # Ti 
+    #logeps_mg = alpha + metal + 7.58 
+    #logeps_si = alpha + metal + 7.55 
+    #logeps_s  = alpha + metal + 7.21 
+    3logeps_ar = alpha + metal + 6.56 
+    #logeps_ca = alpha + metal + 6.36 
+    #logeps_ti = alpha + metal + 4.99
+    #addon.append('      {0:4.1f}      {1:.3f}'.format(12.0,logeps_mg))  # Mg
+    #addon.append('      {0:4.1f}      {1:.3f}'.format(14.0,logeps_si))  # Si 
+    #addon.append('      {0:4.1f}      {1:.3f}'.format(16.0,logeps_s))   # S 
+    #addon.append('      {0:4.1f}      {1:.3f}'.format(18.0,logeps_ar))  # Ar 
+    #addon.append('      {0:4.1f}      {1:.3f}'.format(20.0,logeps_ca))  # Ca 
+    #addon.append('      {0:4.1f}      {1:.3f}'.format(22.0,logeps_ti))  # Ti
+    for iel,abun in enumerate(abundances):
+        addon.append("      {0:4.1f}      {1:8.3f}".format(iel+1,abun))
     # NO MOLECULES FOR NOW!!!
     dln.writelines(atmod,addon,append=True)
-    #WRITELINE,filename+'.moog',addon,/append 
-    #model = filename+'.moog' 
      
     # Mg, Si, S, Ar, Ca and Ti. 
     # Mg-12, Si-14, S-16, Ar-18, Ca-20, Ti-22 
@@ -271,6 +269,7 @@ def do_moog(root,atmod,linelists,mh,am,abundances,wrange,dw,save=False,
     # Read in the linelist
     linelist = dln.readlines(linefile,comment='#')
     nlinelist = len(linelist)
+    lwave = [float(l.split()[0]) for l in linelist]
     #READLINE,linefile,linelist,count=nlinelist,comment='#' 
     #dum = strsplitter(linelist,' ',/extract) 
     #lwave = float(reform(dum[0,:])) 
@@ -278,12 +277,13 @@ def do_moog(root,atmod,linelists,mh,am,abundances,wrange,dw,save=False,
     wavemax = np.max(lwave) 
     
     # Make temporary linelist file 
-    templist = MKTEMP('line') 
+    #templist = MKTEMP('line')
+    templist,tid = tempfile.mkstemp(prefix='line')
     gd , = np.where((lwave >= w0) & (lwave <= w1))
     tlinelist = linelist[gd]
     dln.writelines(templist,tlinelist)
          
-    # This is what the MOOGsynth input file looks like 
+    # This is what the MOOG input file looks like 
     #terminal       'xterm' 
     #model_in       'atmos' 
     #lines_in       'vald.dat' 
@@ -303,48 +303,48 @@ def do_moog(root,atmod,linelists,mh,am,abundances,wrange,dw,save=False,
     #opacit        0
     
     # Set up the parameter file 
-    tparams = []
-    tparams.append("terminal       'xterm'")
-    tparams.append("model_in       '{:s}'".format(models))
-    tparams.append("lines_in       '{:s}'".format(templist))
-    tparams.append("atmosphere    1")
-    tparams.append("molecules     0")   # NO MOLECULES FOR NOW 
-    tparams.append("lines         1")
-    tparams.append("flux/int      0")
-    tparams.append("damping       0")
-    #tparams.append("abundances    1   1" 
-    #tparams.append("        3     -0.87" 
+    params = []
+    params.append("terminal       'xterm'")
+    params.append("standard_out   out1")
+    params.append("summary_out    out2")
+    params.append("smoothed_out   out3")
+    params.append("model_in       '{:s}'".format(models))
+    params.append("lines_in       '{:s}'".format(templist))
+    params.append("atmosphere    1")
+    params.append("molecules     2")
+    params.append("lines         1")
+    params.append("flux/int      0")
+    params.append("damping       0")
+    #params.append("abundances    1   1" 
+    #params.append("        3     -0.87" 
     #***!!!!! NOT REQUIRED IF INPUT IN MODEL ATMOSPHERE!!!!! *** 
     # ADD ABUNDANCES OF ALPHA ELEMENTS 
     # For spectrum use these alpha elements: Mg, Si, S, Ar, Ca and Ti. 
     # Mg-12, Si-14, S-16, Ar-18, Ca-20, Ti-22 
     #if (float(alpha) ne 0.0) then begin 
     #  PUSH,tpaarms,'abundances    6   1' 
-    #  tparams.append('       12     '+strtrim(string(logeps_mg,format='(F8.2)'),2) ; Mg 
-    #  tparams.append('       14     '+strtrim(string(logeps_si,format='(F8.2)'),2) ; Si 
-    #  tparams.append('       16     '+strtrim(string(logeps_s,format='(F8.2)'),2) ; S 
-    #  tparams.append('       18     '+strtrim(string(logeps_ar,format='(F8.2)'),2) ; Ar 
-    #  tparams.append('       20     '+strtrim(string(logeps_ca,format='(F8.2)'),2) ; Ca 
-    #  tparams.append('       22     '+strtrim(string(logeps_ti,format='(F8.2)'),2) ; Ti 
+    #  params.append('       12     '+strtrim(string(logeps_mg,format='(F8.2)'),2) ; Mg 
+    #  params.append('       14     '+strtrim(string(logeps_si,format='(F8.2)'),2) ; Si 
+    #  params.append('       16     '+strtrim(string(logeps_s,format='(F8.2)'),2) ; S 
+    #  params.append('       18     '+strtrim(string(logeps_ar,format='(F8.2)'),2) ; Ar 
+    #  params.append('       20     '+strtrim(string(logeps_ca,format='(F8.2)'),2) ; Ca 
+    #  params.append('       22     '+strtrim(string(logeps_ti,format='(F8.2)'),2) ; Ti 
     #end 
-    tparams.append("synlimits")
-    tparams.append("  {0:10.3f}  {1:10.3f}  {2:10.3f}  {3:10.3f}".format(w0,w1,dw,fwhm))
-    tparams.append("plotpars      1")
-    tparams.append("  {0:10.3f}  {1:10.3f}   0.0   1.00".format(w0,w1))
-    tparams.append("   0.0       0.0    0.00   1.0")
-    tparams.append("    g     {:.3f}      0.0    0.00     0.0     0.0   ".format(fwhm))
-    tparams.append("opacit        0")
+    params.append("synlimits")
+    params.append("  {0:10.3f}  {1:10.3f}  {2:10.3f}  {3:10.3f}".format(w0,w1,dw,fwhm))
+    params.append("plotpars      1")
+    params.append("  {0:10.3f}  {1:10.3f}   0.0   1.00".format(w0,w1))
+    params.append("   0.0       0.0    0.00   1.0")
+    params.append("    g     {:.3f}      0.0    0.00     0.0     0.0   ".format(fwhm))
+    params.append("opacit        0")
          
-    # Make the temporary MOOGsynth input parameter file 
-    #tempfile = MKTEMP('moog') 
-    #WRITELINE,tempfile,tparams 
-    dln.writelines(tepfile,tparams)
+    # MOOGSILENT is hardwired to use "batch.par"
+    dln.writelines('batch.par',params)
     
     # Run MOOGsynth
-    #SPAWN,'./MOOGsynth '+tempfile,out,errout 
     #os.chmod(root+'_bsyn.csh', 0o777)
     #ret = subprocess.check_output(['./'+os.path.basename(root)+'_bsyn.csh'],stderr=subprocess.STDOUT)
-    ret = subprocess.check_output(['./MOOGsynth'],stderr=subprocess.STDOUT)    
+    ret = subprocess.check_output(['./MOOGSILENT'],stderr=subprocess.STDOUT)    
     # Save the log file
     if type(ret) is bytes:
         ret = ret.decode()
@@ -352,86 +352,7 @@ def do_moog(root,atmod,linelists,mh,am,abundances,wrange,dw,save=False,
         f.write(ret)
 
     # Load the spectrum
-    out = np.loadtxt(root+'.synout')
-    wave = out[:,0]
-    fluxnorm = out[:,1]
-    flux = out[:,2]
-    cont = flux/fluxnorm
-              
-    #str = IMPORTASCII(tempfile+'.synout',fieldnames=['wave','flux'],fieldtypes=[4,4],skip=2,/noprint) 
-    #wave = str.wave 
-    #flux = str.flux 
-         
-    ## Trim the edges 
-    #wave_orig = wave 
-    #flux_orig = flux 
-    #gg, = np.where((wave >= wstart) & (wave <= wend))
-    #wave = wave[gg] 
-    #flux = flux[gg] 
+    wave,flux = utils.read_synthfile('out2')
+    cont = np.zeros(flux.shape,float)
 
-
-    
-    # Create MOOG control file
-    bsynfile = root
-    fout = open(bsynfile+'.inp','w')
-    fout.write("'LAMBDA_STEP:'  '{:8.3f}'\n".format(dw))
-    fout.write("'LAMBDA_MIN:'   '{:12.3f}'\n".format(welem.min()))
-    fout.write("'LAMBDA_MAX:'   '{:12.3f}'\n".format(welem.max()))
-    fout.write("'INTENSITY/FLUX:'  'Flux'\n")
-    fout.write("'COS(THETA):'  '1.00'\n")
-    fout.write("'ABFIND:'  '.false.'\n")
-    fout.write("'MODELINPUT:'  '{:s}'\n".format(os.path.basename(atmod)))
-    if atmos_type != 'marcs':
-        fout.write("'MARCS-FILE:'  '.false.'\n")
-    fout.write("'MODELOPAC:'  '{:s}'\n".format(babsma))
-    fout.write("'RESULTFILE:'  '{:s}'\n".format(os.path.basename(root)))
-    fout.write("'METALLICITY:'  '{:8.3f}'\n".format(mh))
-    fout.write("'ALPHA/Fe:'  '{:8.3f}'\n".format(am))
-    fout.write("'HELIUM:'  '{:8.3f}'\n".format(0.00))
-    fout.write("'R-PROCESS:'  '{:8.3f}'\n".format(0.00))
-    fout.write("'S-PROCESS:'  '{:8.3f}'\n".format(0.00))
-    fout.write("'INDIVIDUAL ABUNDANCES:'  '{:2d}'\n".format(len(abundances)))
-    for iel,abun in enumerate(abundances):
-        fout.write("{:5d}  {:8.3f}\n".format(iel+1,abun))
-    if not solarisotopes:
-        fout.write("'ISOTOPES:'  '2'\n")
-        # adopt ratio of 12C/13C=15
-        fout.write("   6.012 0.9375\n")
-        fout.write("   6.013 0.0625\n")
-    fout.write("'NFILES:'  '{:4d}'\n".format(len(linelists)))
-    for linelist in linelists: 
-        fout.write(linelist+"\n")
-    if spherical:
-        fout.write("'SPHERICAL:'  'T'\n")
-    else:
-        fout.write("'SPHERICAL:'  'F'\n")
-    fout.write("30\n")
-    fout.write("300.00\n")
-    fout.write("15\n")
-    fout.write("1.3\n")
-    fout.close()
-
-    # Control file, with special handling in case bsyn goes into infinite loop ...
-    fout = open(root+"_bsyn.csh",'w')
-    fout.write("#!/bin/csh -f\n")
-    fout.write("bsyn_lu < {:s} &\n".format(os.path.basename(bsynfile)+'.inp'))
-    fout.close()
-
-    # Run bsyn
-    os.chmod(root+'_bsyn.csh', 0o777)
-    ret = subprocess.check_output(['./'+os.path.basename(root)+'_bsyn.csh'],stderr=subprocess.STDOUT)
-    # Save the log file
-    if type(ret) is bytes:
-        ret = ret.decode()
-    with open(root+'_bsyn.log','w') as f:
-        f.write(ret)
-    try:
-        out = np.loadtxt(root)
-        wave = out[:,0]
-        fluxnorm = out[:,1]
-        flux = out[:,2]
-        cont = flux/fluxnorm
-    except :
-        print('failed...',root,atmod,mh,am)
-        return 0.,0.,0.
     return flux,cont,wave
