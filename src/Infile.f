@@ -11,6 +11,8 @@ c******************************************************************************
       character type*7,kstat*7,yesno*1,mode*11
       character fname*80
 
+c      PRINT*,'Infile ',type,iunit,mode,irec,charcount,fname,line
+      
 c  decide on the file status desired
       jstat = 0
       if     (type .eq. 'input  ') then
@@ -20,7 +22,7 @@ c  decide on the file status desired
       elseif (type .eq. 'overout') then
          kstat = 'unknown'
       endif
-
+      
 c  write out the appropriate message about this file
 5     nchars = charcount
       if (fname .eq. 'optional_output_file') then
@@ -37,21 +39,21 @@ c  write out the appropriate message about this file
          call putasci (charcount,line)
          if (type .ne. 'input  ') kstat = 'unknown'
       endif
-     
+      
 c  open the file specified by the user, earlier or now
-6     if (mode .eq. 'formatted  ') then
+ 6    if (mode .eq. 'formatted  ') then
          open (unit=iunit,file=fname,access='sequential',
      .         form=mode,blank='null',status=kstat,
-     .         iostat=jstat,err=10)
+     .         iostat=jstat,err=10)         
       else
          open (unit=iunit,file=fname,access='direct',
      .         form=mode,status=kstat,recl=irec,
-     .         iostat=jstat,err=10)
+     .         iostat=jstat,err=10)         
       endif
       istat = ivmove (line+1,1)
       istat = ivcleol ()
       return
-
+      
 c  here are the file reading error messages;
 c  if an expected file is not found, 118 is the error code for SunOS, 1018
 c  is for Solaris, and 2 is for Redhat Linux operating systems.

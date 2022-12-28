@@ -18,8 +18,82 @@ def testdir():
     testdir = codedir+'/test/'
     return testdir
 
+def readlines(fil=None,comment=None,raw=False,nreadline=None,noblank=False):
+    """
+    Read in all lines of a file.
+    
+    Parameters
+    ----------
+    file : str
+         The name of the file to load.
+    comment : str
+         Comment line character to ignore (e.g., "#").
+    raw : bool, optional, default is false
+         Do not trim \n off the ends of the lines.
+    nreadline : int, optional
+         Read only this number of lines.  Default is to read all lines.
+    noblank : boolean, optional
+         Remove blank lines or lines with only whitespace.  Default is False.
 
-def moog_loadsum(sumfile,solar=False,verbose=False):
+    Returns
+    -------
+    lines : list
+          The list of lines from the file
+
+    Example
+    -------
+
+    .. code-block:: python
+
+       lines = readlines("file.txt")
+
+    """
+    if fil is None: raise ValueError("File not input")
+    if nreadline is None:
+        with open(fil,'r') as f:
+            lines = f.readlines()
+    else:
+        with open(fil,'r') as f:
+            lines = []
+            for i in range(nreadline):
+                lines.append( f.readline() )
+    # Remove blank lines
+    if noblank:
+        lines = [l for l in lines if l.strip()!='']
+    # Strip newline off
+    if raw is False: lines = [l.rstrip('\n') for l in lines]
+    # Check for comment string:
+    if comment is not None:
+        lines = [l for l in lines if l[0]!=comment]                
+    return lines
+
+def read_synthfile(synthfile):
+    """ Read the raw synthetic spectrum file."""
+
+    lines = readlines(synthfile)
+    nlines = len(lines)
+    
+    #ALL abundances NOT listed below differ from solar by   0.10 dex
+    #element Li:  abundance =  0.28
+    #MODEL:           Teff = 4150           log g = 2.5           vt= 2.00 M/H= 0.10 
+    #   6695.000   6718.758      0.020      1.000
+    # 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000
+    # 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000    
+    
+    # Get the fluxes
+    fline = ' '.join(lines[4:])
+    flux = np.array(fline.split()).astype(float)
+    flux = 1-flux
+    n = len(flux)
+
+    # Get the wavelengths
+    wline = lines[3]
+    wstart,wend,wstep = wline.split()[0:3]
+    wave = np.arange(n)*float(wstep)+float(wstart)
+
+    return wave,flux
+
+def read_sumfile(sumfile,solar=False,verbose=False):
     """
     This loads the MOOG "sumout" file 
     

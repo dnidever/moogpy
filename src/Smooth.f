@@ -73,8 +73,7 @@ c     files, and get the synthesis range parameters from the 'dump' file
             exit
          endif
       enddo
-
-
+      
 c*****branch to the desired smoothing function
       write (smitle,1010) smtype
       ism = 11

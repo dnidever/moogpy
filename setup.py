@@ -68,14 +68,17 @@ def compilemoog():
     # Which system are we on?
     if platform == 'Darwin':
         run_make_files = ('Makefile.mac', 'Makefile.macsilent')
+        #run_make_files = ('Makefile.macsynth',)
         machine = 'mac'
     elif platform == 'Linux':
         machine = 'pcl'
         is_64bits = sys.maxsize > 2**32
         if is_64bits:
             run_make_files = ('Makefile.rh64', 'Makefile.rh64silent')
+            #run_make_files = ('Makefile.rh64',) 
         else:
             run_make_files = ('Makefile.rh', 'Makefile.rhsilent')
+            #run_make_files = ('Makefile.rh',)
 
     # Check for gfortran or g77
     def system_call(command):
@@ -123,8 +126,9 @@ def compilemoog():
 
     # Update the makefiles with the proper SMLIB and AQLIB
     run_make_files = [os.path.join(repository_dir, 'src', filename) for filename in run_make_files]
-    hardcoded_moog_files = [os.path.join(repository_dir, 'src', filename) for filename in ('Begin.f', 'Moog.f', 'Moogsilent.f')]
-
+    #hardcoded_moog_files = [os.path.join(repository_dir, 'src', filename) for filename in ('Begin.f', 'Moog.f', 'Moogsilent.f')]
+    hardcoded_moog_files = [os.path.join(repository_dir, 'src', filename) for filename in ('Begin.f', 'Moogsynth.f')]    
+    
     # Setup: Move and create copies of the original
     for make_file in run_make_files:
         move(make_file, make_file + '.original')
@@ -161,6 +165,7 @@ def compilemoog():
     if os.path.exists('bin/')==False:
         os.mkdir('bin/')
     for f in ['MOOG','MOOGSILENT']:
+    #for f in ['MOOGSYNTH']:        
         if os.path.exists('src/'+f):
             if os.path.exists('bin/'+f): os.remove('bin/'+f)
             copy('src/'+f,'bin/'+f)
@@ -172,6 +177,7 @@ def compilemoog():
         
     # Copy fortran binaries to bin/ directory
     for f in ['MOOG','MOOGSILENT']:
+    #for f in ['MOOGSYNTH']:                
         if os.path.exists('bin/'+f):
             if os.path.exists(bindir+f): os.remove(bindir+f)
             print('Copying bin/'+f+' -> '+bindir+'/'+f)
