@@ -1,5 +1,4 @@
 include README.rst
-include setup.py
 include src/*
 include python/moogpy/test/*
 include python/moogpy/data/*

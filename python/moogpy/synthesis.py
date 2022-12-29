@@ -368,6 +368,6 @@ def do_moog(root,atmod,linelists,mh,am,abundances,wrange,dw,
 
     # Load the spectrum
     wave,flux = utils.read_synthfile('out2')
-    cont = np.zeros(flux.shape,float)
+    cont = np.ones(flux.shape,float)
     
     return flux,cont,wave
