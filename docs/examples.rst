@@ -12,8 +12,8 @@ Here's a simple example:
 
     >>> from moogpy import synthesis,utils
     >>> atmod = utils.testdir()+'t3710g083m+000.mod'
-    >>> linelist = utils.testdir()+'linelist_mandell.txt'
-    >>> flux,cont,wave = synthesis.synthesize(3710.0,0.83,0.0,atmod=atmod,linelist=linelist,wrange=[6700,6710])
+    >>> linelists = [utils.datadir()+'moogatom.gz',utils.datadir()+'moogh2o.gz']
+    >>> flux,cont,wave = synthesis.synthesize(3710.0,0.83,0.0,atmod=atmod,linelists=linelists,wrange=[6700,6800])
 
 Now plot the spectrum:
 
@@ -36,7 +36,7 @@ means a relative Magnesium abundance of +0.55 and a relative Barium abundance of
 
 Let's try it out:
 
-    >>> flux2,cont2,wave2 = synthesis.synthesize(3710.0,0.83,0.0,atmod=atmod,linelist=linelist,wrange=[6700,6710],elems=[['Mg',0.55],['Ba',-0.15]])
+    >>> flux2,cont2,wave2 = synthesis.synthesize(3710.0,0.83,0.0,atmod=atmod,linelist=linelist,wrange=[6700,6800],elems=[['Mg',0.55],['Ba',-0.15]])
     >>> plt.plot(wave,flux)
     >>> plt.plot(wave2,flux2)
     >>> plt.xlim(6700,6710)
