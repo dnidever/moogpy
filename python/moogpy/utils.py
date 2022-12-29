@@ -67,6 +67,73 @@ def readlines(fil=None,comment=None,raw=False,nreadline=None,noblank=False):
         lines = [l for l in lines if l[0]!=comment]                
     return lines
 
+def writelines(filename=None,lines=None,overwrite=True,raw=False):
+    """
+    Write a list of lines to a file.
+    
+    Parameters
+    ----------
+    filename : str
+        The filename to write the lines to.
+    lines : list
+         The list of lines to write to a file.
+    overwrite : bool, optional, default is True
+        If the output file already exists, then overwrite it.
+    raw : bool, optional, default is False
+        Do not modify the lines. Write out as is.
+
+    Returns
+    -------
+    Nothing is returned.  The lines are written to `fil`.
+
+    Example
+    -------
+
+    .. code-block:: python
+
+       writelines("file.txt",lines)
+
+    """
+    # Not enough inputs
+    if lines is None: raise ValueError("No lines input")
+    if filename is None: raise ValueError("No file name input")
+    # Check if the file exists already
+    if os.path.exists(filename):
+        if overwrite is True:
+            os.remove(filename)
+        else:
+            print(filename+" already exists and overwrite=False")
+            return
+    # Modify the input as needed
+    if raw is False:
+        # List, make sure it ends with \n
+        if type(lines) is list:
+            for i,l in enumerate(lines):
+                if l.endswith('\n') is False:
+                    lines[i] += '\n'
+            # Make sure final element does not end in \n
+            #n = size(lines)
+            #if n>1:
+            #    if lines[-1].endswith('\n'):
+            #        lines[-1] = lines[-1][0:-1]
+            #else:
+            #    if lines[0].endswith('\n'):
+            #        lines = lines[0][0:-1]
+    # Convert string to list
+    if (type(lines) is str) | (type(lines) is np.str_): lines=list(lines)
+    # Convert numpy array and numbers to list of strings
+    if type(lines) is not list:
+        if hasattr(lines,'__iter__'):
+            lines = [str(l)+'\n' for l in lines]
+            # Make sure final element does not end in \n        
+            #if lines[-1].endswith('\n'): lines[-1] = lines[-1][0:-1]        
+        else:
+            lines = str(lines)
+    # Write the file
+    f = open(filename,'w')
+    f.writelines(lines)
+    f.close()
+      
 def read_synthfile(synthfile):
     """ Read the raw synthetic spectrum file."""
 
@@ -79,15 +146,21 @@ def read_synthfile(synthfile):
     #   6695.000   6718.758      0.020      1.000
     # 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000
     # 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000    
+
+    # Find which line MODEL is one
+    for i in range(nlines):
+        if lines[i].find('MODEL')>-1:
+            break
+    linestart = i
     
     # Get the fluxes
-    fline = ' '.join(lines[4:])
+    fline = ' '.join(lines[linestart+2:])
     flux = np.array(fline.split()).astype(float)
     flux = 1-flux
     n = len(flux)
 
     # Get the wavelengths
-    wline = lines[3]
+    wline = lines[linestart+1]
     wstart,wend,wstep = wline.split()[0:3]
     wave = np.arange(n)*float(wstep)+float(wstart)
 

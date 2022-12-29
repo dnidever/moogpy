@@ -9,7 +9,7 @@ from . import utils, atomic, atmos
 
 def synthesize(teff,logg,mh=0.0,am=0.0,cm=0.0,nm=0.0,vmicro=2.0,elems=None,
                wrange=[15000.0,17000.0],dw=0.1,atmod=None,atmos_type='marcs',
-               dospherical=True,linelists=None,solarisotopes=False,workdir=None,
+               dospherical=True,linelist=None,solarisotopes=False,workdir=None,
                save=False,verbose=False):
     """
     Code to synthesize a spectrum with MOOG.
@@ -44,8 +44,8 @@ def synthesize(teff,logg,mh=0.0,am=0.0,cm=0.0,nm=0.0,vmicro=2.0,elems=None,
        Type of model atmosphere file.  Default is 'marcs'.
     dospherical : bool, optional
        Perform spherically-symmetric calculations (otherwise plane-parallel).  Default is True.
-    linelists : list,
-       List of linelists to use.
+    linelist : str
+       Linelist filename.
     save : bool, optional
        Save temporary directory and files for synthesis.  Default=False.
     workdir : str, optional
@@ -84,10 +84,12 @@ def synthesize(teff,logg,mh=0.0,am=0.0,cm=0.0,nm=0.0,vmicro=2.0,elems=None,
         for el in elems:
             atomic_num = atomic.periodic(el[0])
             abundances[atomic_num-1] = atomic.solar(el[0]) + mh + el[1]
-
+    # leave off the last one, 99 for moog means to scale ALL abundances by this value
+    abundances = np.delete(abundances,98)
+            
     # Change to temporary directory
     if workdir is None:
-        workdir = tempfile.mkdtemp(prefix='turbo')
+        workdir = tempfile.mkdtemp(prefix='moog')
     cwd = os.getcwd()
     os.chdir(workdir)
 
@@ -96,11 +98,11 @@ def synthesize(teff,logg,mh=0.0,am=0.0,cm=0.0,nm=0.0,vmicro=2.0,elems=None,
                       atmos.cval(mh), atmos.cval(am), atmos.cval(cm), atmos.cval(nm),atmos.cval(vmicro))
 
     # Check that linelists and model atmosphere files exit
-    if type(linelists) is str:
-        linelists = [linelists]
-    for l in linelists:
-        if os.path.exists(l)==False:
-            raise FileNotFoundError(l)
+    #if type(linelists) is str:
+    #    linelists = [linelists]
+    #for l in linelists:
+    if os.path.exists(linelist)==False:
+        raise FileNotFoundError(l)
     if os.path.exists(atmod)==False:
         raise FileNotFoundError(atmod)
 
@@ -108,7 +110,7 @@ def synthesize(teff,logg,mh=0.0,am=0.0,cm=0.0,nm=0.0,vmicro=2.0,elems=None,
         spherical= True
     else:
         spherical = False
-    flux,cont,wave = do_moog(root,atmod,linelists,mh,am,abundances,wrange,dw,
+    flux,cont,wave = do_moog(root,atmod,linelist,mh,am,abundances,wrange,dw,
                              save=save,solarisotopes=solarisotopes)
 
     os.chdir(cwd)
@@ -121,7 +123,7 @@ def synthesize(teff,logg,mh=0.0,am=0.0,cm=0.0,nm=0.0,vmicro=2.0,elems=None,
     return flux,cont,wave
 
     
-def do_moog(root,atmod,linelists,mh,am,abundances,wrange,dw,save=False,
+def do_moog(root,atmod,linefile,mh,am,abundances,wrange,dw,save=False,
                  solarisotopes=False,babsma=None,atmos_type='marcs',
                  spherical=True,vmicro=2.0,tfactor=1.0,verbose=False):
     """
@@ -133,8 +135,8 @@ def do_moog(root,atmod,linelists,mh,am,abundances,wrange,dw,save=False,
        Root of filenames to use for this MOOG run.
     atmod : str, optional
        Name of atmosphere model (default=None, model is determined from input parameters).
-    linelists : list
-       List of linelist filenames.
+    linefile : str
+       Linelist filename.
     mh : float, optional
        Metallicity, [M/H].  Default is 0.0 (solar).
     am : float, optional
@@ -172,7 +174,7 @@ def do_moog(root,atmod,linelists,mh,am,abundances,wrange,dw,save=False,
     Example
     -------
 
-    flux,cont,wave = do_turbospec(root,atmod,linelists,-0.1,0.2,abund,wrange=[15000.0,17000.0],dw=0.1)
+    flux,cont,wave = do_moog(root,atmod,linefile,-0.1,0.2,abund,wrange=[15000.0,17000.0],dw=0.1)
 
     """
 
@@ -180,15 +182,8 @@ def do_moog(root,atmod,linelists,mh,am,abundances,wrange,dw,save=False,
     #datadir = utils.datadir()
     #os.symlink(datadir,'./DATA')
     shutil.copy(atmod,'./'+os.path.basename(atmod))
-
-    # Individual element grid?
-    nels = len(abundances)
-
-    welem = np.array(wrange)
-
-
-    # Add 
-
+    atmosfile = os.path.basename(atmod)
+    alines = utils.readlines(atmosfile)
     
     # Prepare the end of the MOOG model atmosphere file 
     #NATOMS        3    0.10 
@@ -205,7 +200,7 @@ def do_moog(root,atmod,linelists,mh,am,abundances,wrange,dw,save=False,
     # Create MOOG control file
     addon = []
     natoms = len(abundances)
-    addon.append('NATOMS        {0:s}    {1:.3f}'.format(natoms,mh))
+    addon.append('NATOMS        {0:d}    {1:.3f}'.format(natoms,mh))
     # ADD IN THE ALPHA ABUNDANCES 
     # For MOOG the "alpha" elements are: Mg, Si, S, Ar, Ca and Ti. 
     # Mg-12, Si-14, S-16, Ar-18, Ca-20, Ti-22 
@@ -235,7 +230,7 @@ def do_moog(root,atmod,linelists,mh,am,abundances,wrange,dw,save=False,
     #logeps_mg = alpha + metal + 7.58 
     #logeps_si = alpha + metal + 7.55 
     #logeps_s  = alpha + metal + 7.21 
-    3logeps_ar = alpha + metal + 6.56 
+    #logeps_ar = alpha + metal + 6.56 
     #logeps_ca = alpha + metal + 6.36 
     #logeps_ti = alpha + metal + 4.99
     #addon.append('      {0:4.1f}      {1:.3f}'.format(12.0,logeps_mg))  # Mg
@@ -247,8 +242,9 @@ def do_moog(root,atmod,linelists,mh,am,abundances,wrange,dw,save=False,
     for iel,abun in enumerate(abundances):
         addon.append("      {0:4.1f}      {1:8.3f}".format(iel+1,abun))
     # NO MOLECULES FOR NOW!!!
-    dln.writelines(atmod,addon,append=True)
-     
+    newalines = alines + addon
+    utils.writelines(atmosfile,newalines,overwrite=True)
+    
     # Mg, Si, S, Ar, Ca and Ti. 
     # Mg-12, Si-14, S-16, Ar-18, Ca-20, Ti-22 
     # [alpha/H] = [Fe/H] + [alpha/Fe] 
@@ -267,9 +263,9 @@ def do_moog(root,atmod,linelists,mh,am,abundances,wrange,dw,save=False,
     fwhm = 0.01  # Gaussian broadening 
      
     # Read in the linelist
-    linelist = dln.readlines(linefile,comment='#')
+    linelist = utils.readlines(linefile,comment='#')
     nlinelist = len(linelist)
-    lwave = [float(l.split()[0]) for l in linelist]
+    lwave = np.array([float(l.split()[0]) for l in linelist]).astype(float)
     #READLINE,linefile,linelist,count=nlinelist,comment='#' 
     #dum = strsplitter(linelist,' ',/extract) 
     #lwave = float(reform(dum[0,:])) 
@@ -278,10 +274,11 @@ def do_moog(root,atmod,linelists,mh,am,abundances,wrange,dw,save=False,
     
     # Make temporary linelist file 
     #templist = MKTEMP('line')
-    templist,tid = tempfile.mkstemp(prefix='line')
-    gd , = np.where((lwave >= w0) & (lwave <= w1))
-    tlinelist = linelist[gd]
-    dln.writelines(templist,tlinelist)
+    tid,templist = tempfile.mkstemp(prefix='line')
+    templist = os.path.basename(templist)
+    gd, = np.where((lwave >= w0) & (lwave <= w1))
+    tlinelist = np.char.array(linelist)[gd]
+    utils.writelines(templist,tlinelist)
          
     # This is what the MOOG input file looks like 
     #terminal       'xterm' 
@@ -304,11 +301,12 @@ def do_moog(root,atmod,linelists,mh,am,abundances,wrange,dw,save=False,
     
     # Set up the parameter file 
     params = []
+    params.append("synth")
     params.append("terminal       'xterm'")
     params.append("standard_out   out1")
     params.append("summary_out    out2")
     params.append("smoothed_out   out3")
-    params.append("model_in       '{:s}'".format(models))
+    params.append("model_in       '{:s}'".format(atmosfile))
     params.append("lines_in       '{:s}'".format(templist))
     params.append("atmosphere    1")
     params.append("molecules     2")
@@ -337,14 +335,11 @@ def do_moog(root,atmod,linelists,mh,am,abundances,wrange,dw,save=False,
     params.append("   0.0       0.0    0.00   1.0")
     params.append("    g     {:.3f}      0.0    0.00     0.0     0.0   ".format(fwhm))
     params.append("opacit        0")
-         
     # MOOGSILENT is hardwired to use "batch.par"
-    dln.writelines('batch.par',params)
+    utils.writelines('batch.par',params)
     
-    # Run MOOGsynth
-    #os.chmod(root+'_bsyn.csh', 0o777)
-    #ret = subprocess.check_output(['./'+os.path.basename(root)+'_bsyn.csh'],stderr=subprocess.STDOUT)
-    ret = subprocess.check_output(['./MOOGSILENT'],stderr=subprocess.STDOUT)    
+    # Run MOOGSILENT
+    ret = subprocess.check_output(['MOOGSILENT'],stderr=subprocess.STDOUT)    
     # Save the log file
     if type(ret) is bytes:
         ret = ret.decode()
