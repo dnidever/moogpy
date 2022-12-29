@@ -39,4 +39,4 @@ Let's try it out:
     >>> flux2,cont2,wave2 = synthesis.synthesize(3710.0,0.83,0.0,atmod=atmod,linelist=linelist,wrange=[6700,6800],elems=[['Mg',0.55],['Ba',-0.15]])
     >>> plt.plot(wave,flux)
     >>> plt.plot(wave2,flux2)
-    >>> plt.xlim(6700,6710)
+    >>> plt.xlim(6700,6800)
