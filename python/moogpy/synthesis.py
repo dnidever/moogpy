@@ -281,18 +281,22 @@ def do_moog(root,atmod,linelists,mh,am,abundances,wrange,dw,
         lines1 = utils.readlines(linelists[i],noblank=True)  #,comment='#')
         lines += lines1
     nlinelist = len(lines)
-    # Get wavelengths and sort the lines
+    # Get wavelengths
     lwave = np.array([float(l.split()[0]) for l in lines]).astype(float)
-    si = np.argsort(lwave)
-    lwave = lwave[si]
-    lines = np.char.array(lines)[si]
+    # Sort the lines if more than one linelist was input
+    if len(linelists)>1:
+        si = np.argsort(lwave)
+        lwave = lwave[si]
+        lines = np.char.array(lines)[si]
+    else:
+        lines = np.char.array(lines)        
     wavemin = np.min(lwave) 
     wavemax = np.max(lwave) 
     
     # Make temporary linelist file 
     tid,templist = tempfile.mkstemp(prefix='line')
     templist = os.path.basename(templist)
-    gd, = np.where((lwave >= (w0-1)) & (lwave <= (w1+1)))  # allow 1A buffer
+    gd, = np.where((lwave >= (w0-1)) & (lwave <= (w1+1)))  # allow 1A buffer on ends
     tlines = np.char.array(lines)[gd]
     utils.writelines(templist,tlines)
          
