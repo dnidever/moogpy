@@ -203,7 +203,7 @@ if 'install' in sys.argv or 'develop' in sys.argv or 'bdist_wheel' in sys.argv:
     compilemoog()
 
 setup(name='moogpy',
-      version='1.0.4',
+      version='1.0.5',
       description='MOOG spectral synthesis code and python wrapper',
       author='David Nidever',
       author_email='dnidever@montana.edu',
