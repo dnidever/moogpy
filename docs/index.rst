@@ -31,11 +31,11 @@ and elemental abundances that you want to run.
 
 1) Model Atmospheres
 
-   MOOG can read Kurucz/ATLAS model atmosphers.
+   MOOG can read Kurucz/ATLAS or MARCS model atmospheres.  See pages 12-17 in the `MOOG manual <_static/WRITEnov2019.pdf>`_ for the format and examples.
 
 2) Linelists
 
-   MOOG requires a specific linelist format.
+   MOOG requires a specific linelist format.  See pages 20-21 in the `MOOG manual <_static/WRITEnov2019.pdf>`_ for the format.
    
 3) Stellar parameters and elemental abundances.
 

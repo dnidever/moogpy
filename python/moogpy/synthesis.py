@@ -8,7 +8,7 @@ from . import utils, atomic, atmos
 
 
 def synthesize(teff,logg,mh=0.0,am=0.0,cm=0.0,nm=0.0,vmicro=2.0,elems=None,
-               wrange=[15000.0,17000.0],dw=0.1,atmod=None,atmos_type='marcs',
+               wrange=[15000.0,17000.0],dw=0.1,atmod=None,atmos_type='kurucz',
                dospherical=True,linelist=None,solarisotopes=False,workdir=None,
                save=False,verbose=False):
     """
@@ -41,7 +41,7 @@ def synthesize(teff,logg,mh=0.0,am=0.0,cm=0.0,nm=0.0,vmicro=2.0,elems=None,
     atmod : str, optional
        Name of atmosphere model (default=None, model is determined from input parameters).
     atmos_type : str, optional
-       Type of model atmosphere file.  Default is 'marcs'.
+       Type of model atmosphere file.  Default is 'kurucz'.
     dospherical : bool, optional
        Perform spherically-symmetric calculations (otherwise plane-parallel).  Default is True.
     linelist : str
@@ -84,9 +84,13 @@ def synthesize(teff,logg,mh=0.0,am=0.0,cm=0.0,nm=0.0,vmicro=2.0,elems=None,
         for el in elems:
             atomic_num = atomic.periodic(el[0])
             abundances[atomic_num-1] = atomic.solar(el[0]) + mh + el[1]
+    # Set negative abundances to zero
+    for i in range(len(abundances)):
+        if abundances[i]<0:
+            abundances[i] = 0.0
     # leave off the last one, 99 for moog means to scale ALL abundances by this value
     abundances = np.delete(abundances,98)
-            
+    
     # Change to temporary directory
     if workdir is None:
         workdir = tempfile.mkdtemp(prefix='moog')
@@ -116,7 +120,9 @@ def synthesize(teff,logg,mh=0.0,am=0.0,cm=0.0,nm=0.0,vmicro=2.0,elems=None,
     os.chdir(cwd)
     if not save:
         shutil.rmtree(workdir)
-
+    else:
+        print('Saving temporary directory '+workdir)
+        
     if verbose:
         print('dt = {:.3f}s'.format(time.time()-t0))
         
@@ -349,5 +355,5 @@ def do_moog(root,atmod,linefile,mh,am,abundances,wrange,dw,save=False,
     # Load the spectrum
     wave,flux = utils.read_synthfile('out2')
     cont = np.zeros(flux.shape,float)
-
+    
     return flux,cont,wave
