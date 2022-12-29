@@ -106,7 +106,7 @@ def synthesize(teff,logg,mh=0.0,am=0.0,cm=0.0,nm=0.0,vmicro=2.0,elems=None,
     if type(linelists) is str:
         linelists = [linelists]
     for l in linelists:
-        if os.path.exists(linelist)==False:
+        if os.path.exists(l)==False:
             raise FileNotFoundError(l)
     if os.path.exists(atmod)==False:
         raise FileNotFoundError(atmod)
@@ -276,21 +276,25 @@ def do_moog(root,atmod,linelists,mh,am,abundances,wrange,dw,
     fwhm = 0.01  # Gaussian broadening 
      
     # Read in the linelists
+    lines = []
     for i in range(len(linelists)):
-        lines = utils.readlines(linelists[i],comment='#')
-
-    linelist = utils.readlines(linefile,comment='#')
-    nlinelist = len(linelist)
-    lwave = np.array([float(l.split()[0]) for l in linelist]).astype(float)
+        lines1 = utils.readlines(linelists[i],noblank=True)  #,comment='#')
+        lines += lines1
+    nlinelist = len(lines)
+    # Get wavelengths and sort the lines
+    lwave = np.array([float(l.split()[0]) for l in lines]).astype(float)
+    si = np.argsort(lwave)
+    lwave = lwave[si]
+    lines = np.char.array(lines)[si]
     wavemin = np.min(lwave) 
     wavemax = np.max(lwave) 
     
     # Make temporary linelist file 
     tid,templist = tempfile.mkstemp(prefix='line')
     templist = os.path.basename(templist)
-    gd, = np.where((lwave >= w0) & (lwave <= w1))
-    tlinelist = np.char.array(linelist)[gd]
-    utils.writelines(templist,tlinelist)
+    gd, = np.where((lwave >= (w0-1)) & (lwave <= (w1+1)))  # allow 1A buffer
+    tlines = np.char.array(lines)[gd]
+    utils.writelines(templist,tlines)
          
     # This is what the MOOG input file looks like 
     #terminal       'xterm' 
