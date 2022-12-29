@@ -1,4 +1,5 @@
 import os
+import gzip
 import numpy as np
 from astropy.table import Table
 
@@ -49,14 +50,25 @@ def readlines(fil=None,comment=None,raw=False,nreadline=None,noblank=False):
 
     """
     if fil is None: raise ValueError("File not input")
-    if nreadline is None:
-        with open(fil,'r') as f:
-            lines = f.readlines()
+    # Read gzipped file
+    if fil.endswith('gz'):
+        fp = gzip.open(fil)
+        contents = fp.read() # contents now has the uncompressed bytes of foo.gz
+        fp.close()
+        lines = contents.decode('utf-8') # u_str is now a unicode string
+        lines = lines.split('\n')
+    # Read normal ASCII file
     else:
-        with open(fil,'r') as f:
-            lines = []
-            for i in range(nreadline):
-                lines.append( f.readline() )
+        # Read all lines of normal ASCII file
+        if nreadline is None:
+            with open(fil,'r') as f:
+                lines = f.readlines()
+        # Only read a 
+        else:
+            with open(fil,'r') as f:
+                lines = []
+                for i in range(nreadline):
+                    lines.append( f.readline() )
     # Remove blank lines
     if noblank:
         lines = [l for l in lines if l.strip()!='']

@@ -9,7 +9,7 @@ from . import utils, atomic, atmos
 
 def synthesize(teff,logg,mh=0.0,am=0.0,cm=0.0,nm=0.0,vmicro=2.0,elems=None,
                wrange=[15000.0,17000.0],dw=0.1,atmod=None,atmos_type='kurucz',
-               dospherical=True,linelist=None,solarisotopes=False,workdir=None,
+               dospherical=True,linelists=None,solarisotopes=False,workdir=None,
                save=False,verbose=False):
     """
     Code to synthesize a spectrum with MOOG.
@@ -44,8 +44,8 @@ def synthesize(teff,logg,mh=0.0,am=0.0,cm=0.0,nm=0.0,vmicro=2.0,elems=None,
        Type of model atmosphere file.  Default is 'kurucz'.
     dospherical : bool, optional
        Perform spherically-symmetric calculations (otherwise plane-parallel).  Default is True.
-    linelist : str
-       Linelist filename.
+    linelists : list
+       List of linelist file names.
     save : bool, optional
        Save temporary directory and files for synthesis.  Default=False.
     workdir : str, optional
@@ -84,11 +84,12 @@ def synthesize(teff,logg,mh=0.0,am=0.0,cm=0.0,nm=0.0,vmicro=2.0,elems=None,
         for el in elems:
             atomic_num = atomic.periodic(el[0])
             abundances[atomic_num-1] = atomic.solar(el[0]) + mh + el[1]
-    # Set negative abundances to zero
+    # Cap low abundances at -5.0
+    #   that's what MOOG uses internally for the solar abundances
     for i in range(len(abundances)):
-        if abundances[i]<0:
-            abundances[i] = 0.0
-    # leave off the last one, 99 for moog means to scale ALL abundances by this value
+        if abundances[i]<-5:
+            abundances[i] = -5.0
+    # leave off the last one, 99, b/c for moog this means to scale ALL abundances by this value
     abundances = np.delete(abundances,98)
     
     # Change to temporary directory
@@ -102,11 +103,11 @@ def synthesize(teff,logg,mh=0.0,am=0.0,cm=0.0,nm=0.0,vmicro=2.0,elems=None,
                       atmos.cval(mh), atmos.cval(am), atmos.cval(cm), atmos.cval(nm),atmos.cval(vmicro))
 
     # Check that linelists and model atmosphere files exit
-    #if type(linelists) is str:
-    #    linelists = [linelists]
-    #for l in linelists:
-    if os.path.exists(linelist)==False:
-        raise FileNotFoundError(l)
+    if type(linelists) is str:
+        linelists = [linelists]
+    for l in linelists:
+        if os.path.exists(linelist)==False:
+            raise FileNotFoundError(l)
     if os.path.exists(atmod)==False:
         raise FileNotFoundError(atmod)
 
@@ -114,7 +115,7 @@ def synthesize(teff,logg,mh=0.0,am=0.0,cm=0.0,nm=0.0,vmicro=2.0,elems=None,
         spherical= True
     else:
         spherical = False
-    flux,cont,wave = do_moog(root,atmod,linelist,mh,am,abundances,wrange,dw,
+    flux,cont,wave = do_moog(root,atmod,linelists,mh,am,abundances,wrange,dw,
                              save=save,solarisotopes=solarisotopes)
 
     os.chdir(cwd)
@@ -129,9 +130,9 @@ def synthesize(teff,logg,mh=0.0,am=0.0,cm=0.0,nm=0.0,vmicro=2.0,elems=None,
     return flux,cont,wave
 
     
-def do_moog(root,atmod,linefile,mh,am,abundances,wrange,dw,save=False,
-                 solarisotopes=False,babsma=None,atmos_type='marcs',
-                 spherical=True,vmicro=2.0,tfactor=1.0,verbose=False):
+def do_moog(root,atmod,linelists,mh,am,abundances,wrange,dw,
+            solarisotopes=False,spherical=True,vmicro=2.0,
+            molecules=None,save=False,verbose=False):
     """
     Runs MOOG for specified input parameters.
 
@@ -141,28 +142,30 @@ def do_moog(root,atmod,linefile,mh,am,abundances,wrange,dw,save=False,
        Root of filenames to use for this MOOG run.
     atmod : str, optional
        Name of atmosphere model (default=None, model is determined from input parameters).
-    linefile : str
-       Linelist filename.
+    linelists : list
+       List of linelist file names.
     mh : float, optional
        Metallicity, [M/H].  Default is 0.0 (solar).
     am : float, optional
        Alpha abundance, [alpha/M].  Default is 0.0 (solar).
     abundances : list
-       List of abundances.
+       List of abundances in log epsilon format, log eps(X) = log(N(X)/N(H)) + 12.0.
     wrange : list, optional
        Two element wavelength range in A.  Default is [15000.0,17000.0].
     dw : float, optional
        Wavelength step.  Default is 0.1 A.
     solarisotopes : bool, optional
        Use solar isotope ratios, else "giant" isotope ratios.  Default is False.
-    babsma : bool, optional
-       The name of hte babsma output file of opacities.  Default is None to run babmsa.
-    atmos_type : str, optional
-       Model atmosphere type.  Default is 'marcs'.
     spherical : bool, optional
        Spherical atmosphere.  Default is True.
     vmicro : float, optional
        Microturbulent velocity in km/s.  Default is 2.0 km/s.
+    molecules : list, optional
+       List of molecules and ions to include in the molecular equilibrium calculations.
+         By default, these ones are included:
+         [606.0,106.0,607.0,608.0,107.0,108.0,112.0,707.0,708.0,
+          808.0,12.1,60808.0,10108.0,101.0,60606.0,839.0,840.0,
+          822.0,22.1,6.1,7.1,8.1,40.1,39.1]
     save : bool, optional
        Save temporary directory and files for synthesis.  Default=False.
     verbose : bool, optional
@@ -185,8 +188,6 @@ def do_moog(root,atmod,linefile,mh,am,abundances,wrange,dw,save=False,
     """
 
     # MOOG setup
-    #datadir = utils.datadir()
-    #os.symlink(datadir,'./DATA')
     shutil.copy(atmod,'./'+os.path.basename(atmod))
     atmosfile = os.path.basename(atmod)
     alines = utils.readlines(atmosfile)
@@ -202,20 +203,12 @@ def do_moog(root,atmod,linefile,mh,am,abundances,wrange,dw,save=False,
     #     840.0     822.0      22.1      40.1      39.1 
 
     # MOOG internally stores the Asplund+2009 solar abundances
-        
+    # see Batom.f
+    
     # Create MOOG control file
     addon = []
     natoms = len(abundances)
     addon.append('NATOMS        {0:d}    {1:.3f}'.format(natoms,mh))
-    # ADD IN THE ALPHA ABUNDANCES 
-    # For MOOG the "alpha" elements are: Mg, Si, S, Ar, Ca and Ti. 
-    # Mg-12, Si-14, S-16, Ar-18, Ca-20, Ti-22 
-    # according to Kirby 
-     
-    # This needs to be in log(epsilon) format: log(eps) = log(N(X)/N(H)) + 12.0 
-    # [A/B] = log(n(A)/n(B))- log(n(A)/n(B))_solar 
-    #  where n() is number density 
-    # 12 + log[n(Fe)/n(H)]_sol = 7.52  ; solar [Fe/H] 
      
     # CONVERT TO LOG EPSILON FORMAT 
     # log eps(X) = log(N(X)/N(H)) + 12.0 
@@ -228,37 +221,51 @@ def do_moog(root,atmod,linefile,mh,am,abundances,wrange,dw,save=False,
     # This is the (log(n(X)/n(H))_solar + 12.0) value 
     # from Batom.f 
     # Mg(12)= 7.58 
-    # Si(14)= 7.55 
-    # S (16)= 7.21 
-    # Ar(18)= 6.56 
-    # Ca(20)= 6.36 
-    # Ti(22)= 4.99 
-    #logeps_mg = alpha + metal + 7.58 
-    #logeps_si = alpha + metal + 7.55 
-    #logeps_s  = alpha + metal + 7.21 
-    #logeps_ar = alpha + metal + 6.56 
-    #logeps_ca = alpha + metal + 6.36 
-    #logeps_ti = alpha + metal + 4.99
-    #addon.append('      {0:4.1f}      {1:.3f}'.format(12.0,logeps_mg))  # Mg
-    #addon.append('      {0:4.1f}      {1:.3f}'.format(14.0,logeps_si))  # Si 
-    #addon.append('      {0:4.1f}      {1:.3f}'.format(16.0,logeps_s))   # S 
-    #addon.append('      {0:4.1f}      {1:.3f}'.format(18.0,logeps_ar))  # Ar 
-    #addon.append('      {0:4.1f}      {1:.3f}'.format(20.0,logeps_ca))  # Ca 
-    #addon.append('      {0:4.1f}      {1:.3f}'.format(22.0,logeps_ti))  # Ti
+    # logeps_mg = alpha + metal + 7.58 
+    # addon.append('      {0:4.1f}      {1:.3f}'.format(12.0,logeps_mg))  # Mg
+    # The abundances have to be input as log epsilon
     for iel,abun in enumerate(abundances):
         addon.append("      {0:4.1f}      {1:8.3f}".format(iel+1,abun))
-    # NO MOLECULES FOR NOW!!!
+    # Molecules and ions to be included in the molecular equilibrium calculation
+    #   the atoms will be automatically added
+    # 6-C, 7-N, 8-O
+    # 606 - C2
+    # 106 - CH
+    # 607 - CN
+    # 608 - CO
+    # 107 - NH
+    # 108 - OH
+    # 112 - MgH
+    # 707 - N2
+    # 708 - NH
+    # 808 - O2
+    # 21.1 - Sc II
+    # 60808.0 - CO2
+    # 10108.0 - H20
+    # 101.0 - H2
+    # 60606.0 - C3
+    # 839.0 - YO
+    # 840.0 - ZrO
+    # 822.0 - TiO
+    # 22.1 - Ti II
+    # 40.1 - Zr II
+    # 39.1 - Y II
+    if molecules is not None:
+        mols = molecules
+    else:
+        mols = [606.0,106.0,607.0,608.0,107.0,108.0,112.0,707.0,708.0,
+                808.0,12.1,60808.0,10108.0,101.0,60606.0,839.0,840.0,
+                822.0,22.1,6.1,7.1,8.1,40.1,39.1]
+    addon.append('NMOL         '+str(len(mols)))
+    mollines = ''
+    for l in mols:
+        mollines += '{:10.1f}'.format(float(l))
+    # Put 7 per line
+    for i in range(int(np.ceil(len(mols)/7))):
+        addon.append(mollines[i*70:i*70+70])
     newalines = alines + addon
     utils.writelines(atmosfile,newalines,overwrite=True)
     
-    # Mg, Si, S, Ar, Ca and Ti. 
-    # Mg-12, Si-14, S-16, Ar-18, Ca-20, Ti-22 
-    # [alpha/H] = [Fe/H] + [alpha/Fe] 
-    # 
-    # 12 + log[n(Fe)/n(H)]_sol = 7.52  ; solar [Fe/H] 
-    # 
-    # Microturbulence equation: vt = 2.700 - 0.509*logg 
-     
      
     #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5 
     # RUN MOOG 
@@ -268,18 +275,17 @@ def do_moog(root,atmod,linefile,mh,am,abundances,wrange,dw,save=False,
     w1 = wrange[1]
     fwhm = 0.01  # Gaussian broadening 
      
-    # Read in the linelist
+    # Read in the linelists
+    for i in range(len(linelists)):
+        lines = utils.readlines(linelists[i],comment='#')
+
     linelist = utils.readlines(linefile,comment='#')
     nlinelist = len(linelist)
     lwave = np.array([float(l.split()[0]) for l in linelist]).astype(float)
-    #READLINE,linefile,linelist,count=nlinelist,comment='#' 
-    #dum = strsplitter(linelist,' ',/extract) 
-    #lwave = float(reform(dum[0,:])) 
     wavemin = np.min(lwave) 
     wavemax = np.max(lwave) 
     
     # Make temporary linelist file 
-    #templist = MKTEMP('line')
     tid,templist = tempfile.mkstemp(prefix='line')
     templist = os.path.basename(templist)
     gd, = np.where((lwave >= w0) & (lwave <= w1))
@@ -335,7 +341,7 @@ def do_moog(root,atmod,linefile,mh,am,abundances,wrange,dw,save=False,
     #  params.append('       22     '+strtrim(string(logeps_ti,format='(F8.2)'),2) ; Ti 
     #end 
     params.append("synlimits")
-    params.append("  {0:10.3f}  {1:10.3f}  {2:10.3f}  {3:10.3f}".format(w0,w1,dw,fwhm))
+    params.append("  {0:10.3f}  {1:10.3f}  {2:10.3f}  1.00".format(w0,w1,dw))
     params.append("plotpars      1")
     params.append("  {0:10.3f}  {1:10.3f}   0.0   1.00".format(w0,w1))
     params.append("   0.0       0.0    0.00   1.0")
