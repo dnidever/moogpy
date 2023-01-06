@@ -80,6 +80,7 @@ c     been printed
          read (nflines,1001) linitle
       endif
 
+      print*,'trim wavelength range ',(start-1),(sstop+1)
 
 c*****read in the strong lines if needed
 302   nstrong = 0
@@ -118,6 +119,10 @@ c*****read in the strong lines if needed
          read (nflines,*,end=311) wave1(j),atom1(j),e(j,1),gf(j),
      .                             dampnum(j),d0(j),width(j)
       endif
+c      print*,wave1(j),atom1(j),e(j,1),gf(j)
+      if (wave1(j).lt.(start-1) .or. wave1(j).gt.(sstop+1)) then
+         go to 333
+      endif
       iatom = atom1(j)
       charge(j) = 1.0 + dble(int(10.0*(atom1(j) - iatom)+0.0001))
       if (charge(j) .gt. 3.) then
@@ -137,7 +142,8 @@ c*****read in the strong lines if needed
       if (j .le. nlines) go to 333
 311   nlines = j - 1 
 
-
+      print*,nlines,' lines read'
+      
 c*****append the strong lines here if necessary
       if (dostrong .gt. 0) then
          do k=1,nstrong
@@ -168,6 +174,7 @@ c*****here groups of lines for blended features are defined
 c*****here excitation potentials are changed from cm^-1 to eV, if needed
       do j=1,nlines+nstrong
          if (e(j,1) .gt. 50.) then
+            print*,j,e(j,1),' converting ep from cm^-1 to eV'
             do jj=1,nlines+nstrong
                e(jj,1) = 1.2389e-4*e(jj,1)
             enddo
@@ -205,7 +212,6 @@ c     and a different one for atomic lines
          iatom = atom1(j)
          atom10 = 10.*atom1(j)
          e(j,2) =  e(j,1) + 1.239d+4/wave1(j)
-
 
 c*****here are the calculations specific to molecular lines
          if (iatom .ge. 100) then
