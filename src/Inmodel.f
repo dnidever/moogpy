@@ -27,10 +27,8 @@ c*****Read in the key word to define the model type
       if (modtype .eq. 'begn      ' .or.  modtype .eq. 'BEGN      ') 
      .   write (nf1out,1011)
 
-
 c*****Read a comment line (usually describing the model)
       read (nfmodel,2002) moditle
-
 
 c*****Read the number of depth points
       read (nfmodel,2002) list
@@ -193,8 +191,7 @@ c     Conversion to cm/sec from km/sec is done if needed
       else
          write (moditle(55:62),1008) vturb(1)/1.0e5
       endif
-
-
+      
 c*****Read in the abundance data, storing the original abundances in xabu
 c*****The abundances not read in explicity are taken from the default
 c*****solar ones contained in array xsolar.
