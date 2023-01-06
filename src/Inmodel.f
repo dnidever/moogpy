@@ -109,6 +109,7 @@ c     using a reference wavelength that it reads in before the model.
          read (nfmodel,*) wavref    
          do i=1,ntau
             read (nfmodel,*) rhox(i),t(i),pgas(i),ne(i)
+c            print*,rhox(i),t(i),pgas(i),ne(i)
          enddo
 c     OR: Read in a model generated from ATLAS, with output generated
 c     in Padova.  The columns are in somewhat different order than normal
@@ -143,6 +144,7 @@ c*****Compute other convenient forms of the temperatures
 
 c*****Convert from logarithmic Pgas scales, if needed
       if (pgas(ntau)/pgas(1) .lt. 10.) then
+         print*,'converting log pgas to linear'
          do i=1,ntau                                                    
             pgas(i) = 10.0**pgas(i)
          enddo
@@ -151,6 +153,7 @@ c*****Convert from logarithmic Pgas scales, if needed
 
 c*****Convert from logarithmic Ne scales, if needed
       if(ne(ntau)/ne(1) .lt. 20.) then
+         print*,'converting log Ne to linear'         
          do i=1,ntau                                                    
             ne(i) = 10.0**ne(i)
          enddo
@@ -159,6 +162,7 @@ c*****Convert from logarithmic Ne scales, if needed
 
 c*****Convert from Pe to Ne, if needed
       if(ne(ntau) .lt. 1.0e7) then
+         print*,'converting from Pe to Ne'
          do i=1,ntau                                                    
             ne(i) = ne(i)/1.38054d-16/t(i)
          enddo
@@ -191,6 +195,8 @@ c     Conversion to cm/sec from km/sec is done if needed
       else
          write (moditle(55:62),1008) vturb(1)/1.0e5
       endif
+
+c      print*,vturb(1),vturb(2)
       
 c*****Read in the abundance data, storing the original abundances in xabu
 c*****The abundances not read in explicity are taken from the default
@@ -214,7 +220,7 @@ c*****solar ones contained in array xsolar.
             xabu(idint(element(i))) = 10.0**logepsilon(i)/xhyd
          enddo
       endif
-
+      
 c*****Compute the mean molecular weight, ignoring molecule formation
 c     in this approximation (maybe make more general some day?)
       wtnum = 0.
@@ -234,13 +240,12 @@ c     in this approximation (maybe make more general some day?)
          enddo
       endif
 
-c*****Compute the density 
+c*****Compute the density
       if (modtype .ne. 'NEXTGEN   ') then
          do i=1,ntau                                                    
             rho(i) = pgas(i)*molweight(i)*1.6606d-24/(1.38054d-16*t(i))
          enddo
       endif
-
 
 c*****Calculate the fictitious number density of hydrogen
 c     Note:  ph = (-b1 + dsqrt(b1*b1 - 4.0*a1*c1))/(2.0*a1)
@@ -390,7 +395,6 @@ c     SPECIAL NEEDS: for generic models, to create internal kaprefs,
      .        modtype .eq. 'WEB2MARC  ') then
          call opacit (1,wavref)
       endif
-
 
 c*****Convert from logarithmic optical depth scales, or vice versa.
 c     xref will contain the log of the tauref
