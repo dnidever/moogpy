@@ -225,7 +225,8 @@ def do_moog(root,atmod,linelists,mh,am,abundances,wrange,dw,
     # addon.append('      {0:4.1f}      {1:.3f}'.format(12.0,logeps_mg))  # Mg
     # The abundances have to be input as log epsilon
     for iel,abun in enumerate(abundances):
-        addon.append("      {0:4.1f}      {1:8.3f}".format(iel+1,abun))
+        if (iel+1)<=95:  # MOOG only goes up to 95
+            addon.append("      {0:4.1f}      {1:8.3f}".format(iel+1,abun))
     # Molecules and ions to be included in the molecular equilibrium calculation
     #   the atoms will be automatically added
     # 6-C, 7-N, 8-O
